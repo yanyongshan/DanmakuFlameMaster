@@ -22,7 +22,11 @@ import java.util.Comparator;
 import master.flame.danmaku.danmaku.util.DanmakuUtils;
 
 public interface IDanmakus {
-
+    /***
+     * 弹幕消费者处理器，用于业务方对弹幕二次处理
+     * @param <Progress>
+     * @param <Result>
+     */
     abstract class Consumer<Progress, Result> {
 
         public static final int ACTION_CONTINUE = 0;
@@ -58,9 +62,9 @@ public interface IDanmakus {
     abstract class DefaultConsumer<Progress> extends Consumer<Progress, Void> {
 
     }
-
+    //弹幕以时间排序
     int ST_BY_TIME = 0;
-
+    //弹幕以Y坐标排序
     int ST_BY_YPOS = 1;
 
     int ST_BY_YPOS_DESC = 2;
@@ -68,6 +72,7 @@ public interface IDanmakus {
     /**
      * this type is used to iterate/remove/insert elements, not support sub/subnew
      */
+    //弹幕插入顺序排序
     int ST_BY_LIST = 4;
 
 
@@ -101,8 +106,11 @@ public interface IDanmakus {
 
     Object obtainSynchronizer();
 
+    /***
+     * 弹幕排序器
+     */
     class BaseComparator implements Comparator<BaseDanmaku> {
-
+        //是否去重
         protected boolean mDuplicateMergingEnable;
 
         public BaseComparator(boolean duplicateMergingEnabled) {
@@ -123,6 +131,9 @@ public interface IDanmakus {
 
     }
 
+    /***
+     * 时间比较器
+     */
     class TimeComparator extends BaseComparator {
 
         public TimeComparator(boolean duplicateMergingEnabled) {
@@ -135,6 +146,9 @@ public interface IDanmakus {
         }
     }
 
+    /***
+     * 弹幕Y坐标比较器
+     */
     class YPosComparator extends BaseComparator {
 
         public YPosComparator(boolean duplicateMergingEnabled) {

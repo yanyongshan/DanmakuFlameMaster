@@ -43,6 +43,9 @@ import master.flame.danmaku.danmaku.parser.BaseDanmakuParser;
 import master.flame.danmaku.danmaku.renderer.IRenderer.RenderingState;
 import master.flame.danmaku.danmaku.util.SystemClock;
 
+/***
+ * 弹幕View
+ */
 public class DanmakuView extends View implements IDanmakuView, IDanmakuViewController {
 
     public static final String TAG = "DanmakuView";
@@ -104,6 +107,10 @@ public class DanmakuView extends View implements IDanmakuView, IDanmakuViewContr
         init();
     }
 
+    /***
+     * 添加弹幕
+     * @param item 弹幕Item
+     */
     public void addDanmaku(BaseDanmaku item) {
         if (handler != null) {
             handler.addDanmaku(item);

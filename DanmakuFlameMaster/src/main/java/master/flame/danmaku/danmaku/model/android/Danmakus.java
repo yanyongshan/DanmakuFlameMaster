@@ -29,23 +29,21 @@ import master.flame.danmaku.danmaku.model.Danmaku;
 import master.flame.danmaku.danmaku.model.IDanmakus;
 
 public class Danmakus implements IDanmakus {
-
+    //弹幕集合
     public Collection<BaseDanmaku> items;
-
+    //弹幕子集
     private Danmakus subItems;
-
+    //弹幕集合索引区间
     private BaseDanmaku startItem, endItem;
-
-    private BaseDanmaku endSubItem;
-
-    private BaseDanmaku startSubItem;
-
+    //弹幕子集索引区间
+    private BaseDanmaku startSubItem, endSubItem;
+    //弹幕集合数量
     private volatile AtomicInteger mSize = new AtomicInteger(0);
-
+    //排序方式
     private int mSortType = ST_BY_TIME;
-
+    //弹幕比较器
     private BaseComparator mComparator;
-
+    //是否合并重复弹幕
     private boolean mDuplicateMergingEnabled;
     private Object mLockObject = new Object();
 
@@ -53,14 +51,29 @@ public class Danmakus implements IDanmakus {
         this(ST_BY_TIME, false);
     }
 
+    /***
+     * 弹幕集
+     * @param sortType 排序方式
+     */
     public Danmakus(int sortType) {
         this(sortType, false);
     }
 
+    /***
+     * 弹幕集
+     * @param sortType 排序方式
+     * @param duplicateMergingEnabled 是否去重
+     */
     public Danmakus(int sortType, boolean duplicateMergingEnabled) {
         this(sortType, duplicateMergingEnabled, null);
     }
 
+    /***
+     * 弹幕集
+     * @param sortType 排序方式
+     * @param duplicateMergingEnabled 是否去重
+     * @param baseComparator 排序比较
+     */
     public Danmakus(int sortType, boolean duplicateMergingEnabled, BaseComparator baseComparator) {
         BaseComparator comparator = null;
         if (sortType == ST_BY_TIME) {
@@ -106,6 +119,11 @@ public class Danmakus implements IDanmakus {
         mSize.set(items == null ? 0 : items.size());
     }
 
+    /***
+     * 添加一条弹幕
+     * @param item 一条弹幕信息
+     * @return 是否添加成功
+     */
     @Override
     public boolean addItem(BaseDanmaku item) {
         synchronized (this.mLockObject) {
@@ -123,6 +141,11 @@ public class Danmakus implements IDanmakus {
         return false;
     }
 
+    /***
+     * 删除弹幕
+     * @param item 一条弹幕信息
+     * @return 是否删除成功
+     */
     @Override
     public boolean removeItem(BaseDanmaku item) {
         if (item == null) {
@@ -140,6 +163,12 @@ public class Danmakus implements IDanmakus {
         return false;
     }
 
+    /***
+     * 获取指定时间内的弹幕子集
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 指定时间内的弹幕子集
+     */
     private Collection<BaseDanmaku> subset(long startTime, long endTime) {
         if (mSortType == ST_BY_LIST || items == null || items.size() == 0) {
             return null;
@@ -160,6 +189,12 @@ public class Danmakus implements IDanmakus {
         return ((SortedSet<BaseDanmaku>) items).subSet(startSubItem, endSubItem);
     }
 
+    /***
+     * 根据指定时间内的弹幕产生新的弹幕集合
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @return 指定时间内的弹幕集
+     */
     @Override
     public IDanmakus subnew(long startTime, long endTime) {
         Collection<BaseDanmaku> subset = subset(startTime, endTime);
@@ -176,7 +211,7 @@ public class Danmakus implements IDanmakus {
             return null;
         }
         if (subItems == null) {
-            if(mSortType == ST_BY_LIST) {
+            if (mSortType == ST_BY_LIST) {
                 subItems = new Danmakus(Danmakus.ST_BY_LIST);
                 subItems.mLockObject = this.mLockObject;
                 synchronized (this.mLockObject) {
@@ -235,6 +270,10 @@ public class Danmakus implements IDanmakus {
         }
     }
 
+    /***
+     * 获取队头位置弹幕
+     * @return 队头位置弹幕
+     */
     @Override
     public BaseDanmaku first() {
         if (items != null && !items.isEmpty()) {
@@ -245,7 +284,10 @@ public class Danmakus implements IDanmakus {
         }
         return null;
     }
-
+    /***
+     * 获取队尾位置弹幕
+     * @return 队头位置弹幕
+     */
     @Override
     public BaseDanmaku last() {
         if (items != null && !items.isEmpty()) {
@@ -267,11 +309,19 @@ public class Danmakus implements IDanmakus {
         return this.items == null || this.items.isEmpty();
     }
 
+    /***
+     * 设置是否弹幕去重
+     * @param enable 是否去重
+     */
     private void setDuplicateMergingEnabled(boolean enable) {
         mComparator.setDuplicateMergingEnabled(enable);
         mDuplicateMergingEnabled = enable;
     }
 
+    /***
+     * 设置弹幕子集是否去重
+     * @param enable 是否去重
+     */
     @Override
     public void setSubItemsDuplicateMergingEnabled(boolean enable) {
         mDuplicateMergingEnabled = enable;
@@ -295,6 +345,10 @@ public class Danmakus implements IDanmakus {
         }
     }
 
+    /***
+     * 设置弹幕处理器，主要用于根据业务逻辑对弹幕集合进行二次处理
+     * @param consumer 弹幕处理器
+     */
     @Override
     public void forEach(Consumer<? super BaseDanmaku, ?> consumer) {
         consumer.before();
