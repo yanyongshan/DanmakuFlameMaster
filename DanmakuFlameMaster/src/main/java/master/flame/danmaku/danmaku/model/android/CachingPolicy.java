@@ -71,9 +71,9 @@ public class CachingPolicy {
      * @see master.flame.danmaku.controller.CacheManagingDrawTask.CacheManager#findReusableCache
      */
     public int reusableOffsetPixel = 0;
-
+    //严格模式下查询渲染缓存最大查询次数
     public int maxTimesOfStrictReusableFinds = 20;
-
+    //非严格模式下最大查询次数
     public int maxTimesOfReusableFinds = 150;
 
 }

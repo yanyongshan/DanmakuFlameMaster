@@ -1,12 +1,14 @@
 package master.flame.danmaku.danmaku.model;
 
 public class GlobalFlagValues {
-
+    //测量标志位
     public int MEASURE_RESET_FLAG = 0;
+    //可见性标志位
     public int VISIBLE_RESET_FLAG = 0;
     public int FILTER_RESET_FLAG = 0;
     public int FIRST_SHOWN_RESET_FLAG = 0;
     public int SYNC_TIME_OFFSET_RESET_FLAG = 0;
+    //弹幕准备标志位
     public int PREPARE_RESET_FLAG = 0;
 
     public void resetAll() {

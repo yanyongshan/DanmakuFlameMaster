@@ -387,7 +387,6 @@ public class CacheManagingDrawTask extends DrawTask {
             }
             this.mCaches.addItem(item);
             mRealSize += size;
-//Log.i("DFM CACHE", "realsize:"+mRealSize + ",size" + size);
             return true;
         }
 
@@ -422,9 +421,17 @@ public class CacheManagingDrawTask extends DrawTask {
             });
         }
 
+        /***
+         * 查询可重用的缓存
+         * @param refDanmaku 新弹幕信息
+         * @param strictMode 是否为严格模式（即要求文本，色值等都全部相同才可复用，否则表示只是有缓存尺寸满足条件即可）
+         * @param maximumTimes 最大查询弹幕次数
+         * @return 可复用缓存弹幕
+         */
         private BaseDanmaku findReusableCache(final BaseDanmaku refDanmaku,
                                               final boolean strictMode,
                                               final int maximumTimes) {
+            //可以溢出的尺寸
             int slopPixel = 0;
             if (!strictMode) {
                 slopPixel = mDisp.getSlopPixel() * 2;
@@ -830,13 +837,17 @@ public class CacheManagingDrawTask extends DrawTask {
                 consumingTime = SystemClock.uptimeMillis() - startTime;
                 if (item != null) {
                     mCacheTimer.update(item.getTime());
-//Log.i("cache","stop at :"+item.time+","+count+",size:"+danmakus.size()+","+message);
                 } else {
                     mCacheTimer.update(end);
                 }
                 return consumingTime;
             }
 
+            /***
+             * 直接从缓存池中分配缓存
+             * @param item 弹幕
+             * @return 是否缓存成功
+             */
             public boolean createCache(BaseDanmaku item) {
                 // measure
                 if (!item.isMeasured()) {
@@ -848,14 +859,12 @@ public class CacheManagingDrawTask extends DrawTask {
                     cache = DanmakuUtils.buildDanmakuDrawingCache(item, mDisp, cache, mContext.cachingPolicy.bitsPerPixelOfCache);
                     item.cache = cache;
                 } catch (OutOfMemoryError e) {
-//Log.e("cache", "break at error: oom");
                     if (cache != null) {
                         mCachePool.release(cache);
                     }
                     item.cache = null;
                     return false;
                 } catch (Exception e) {
-//Log.e("cache", "break at exception:" + e.getMessage());
                     if (cache != null) {
                         mCachePool.release(cache);
                     }
@@ -865,16 +874,21 @@ public class CacheManagingDrawTask extends DrawTask {
                 return true;
             }
 
+            /***
+             * 构建弹幕渲染缓存
+             * @param item 当前弹幕
+             * @param forceInsert 是否强制保存到缓存池中
+             * @return 是否成功
+             */
             private byte buildCache(BaseDanmaku item, boolean forceInsert) {
-
-                // measure
+                //测量弹幕尺寸
                 if (!item.isMeasured()) {
                     item.measure(mDisp, true);
                 }
 
                 DrawingCache cache = null;
                 try {
-                    // try to find reuseable cache
+                    //1.尝试以严格模式查询弹幕渲染缓存
                     BaseDanmaku danmaku = findReusableCache(item, true, mContext.cachingPolicy.maxTimesOfStrictReusableFinds);
                     if (danmaku != null) {
                         cache = (DrawingCache) danmaku.cache;
@@ -882,33 +896,30 @@ public class CacheManagingDrawTask extends DrawTask {
                     if (cache != null) {
                         cache.increaseReference();
                         item.cache = cache;
-//Log.w("cache", danmaku.text + "DrawingCache hit!!:" + item.paintWidth + "," + danmaku.paintWidth);
                         mCacheManager.push(item, 0, forceInsert);
                         return RESULT_SUCCESS;
                     }
 
-                    // try to find reuseable cache from timeout || no-refrerence caches
+                    //2.尝试以非严格模式查询弹幕渲染缓存（即只要宽高满足条件即可）
                     danmaku = findReusableCache(item, false, mContext.cachingPolicy.maxTimesOfReusableFinds);
                     if (danmaku != null) {
                         cache = (DrawingCache) danmaku.cache;
                     }
                     if (cache != null) {
                         danmaku.cache = null;
-//Log.e("cache", danmaku.text + "DrawingCache hit!!:" + item.paintWidth + "," + danmaku.paintWidth);
+                        //重绘弹幕内容
                         cache = DanmakuUtils.buildDanmakuDrawingCache(item, mDisp, cache, mContext.cachingPolicy.bitsPerPixelOfCache);  //redraw
                         item.cache = cache;
                         mCacheManager.push(item, 0, forceInsert);
                         return RESULT_SUCCESS;
                     }
 
-                    // guess cache size
+                    //推测缓存大小以确认是否能使用缓存
                     int cacheSize = DanmakuUtils.getCacheSize((int) item.paintWidth, (int) item.paintHeight, mContext.cachingPolicy.bitsPerPixelOfCache / 8);
-                    if (cacheSize * 2 > mMaxCacheSize) {  // block large-size cache
-//                        Log.d("cache", "cache is too large:"+cacheSize);
+                    if (cacheSize * 2 > mMaxCacheSize) {
                         return RESULT_FAILED;
                     }
                     if (!forceInsert && (mRealSize + cacheSize > mMaxSize)) {
-//                        Log.d("cache", "break at MaxSize:"+mMaxSize);
                         mCacheManager.clearTimeOutAndFilteredCaches(cacheSize, false);
                         return RESULT_FAILED;
                     }
@@ -919,21 +930,22 @@ public class CacheManagingDrawTask extends DrawTask {
                     boolean pushed = mCacheManager.push(item, sizeOf(item), forceInsert);
                     if (!pushed) {
                         releaseDanmakuCache(item, cache);
-//Log.e("cache", "break at push failed:" + mMaxSize);
                     }
                     return pushed ? RESULT_SUCCESS : RESULT_FAILED;
 
                 } catch (OutOfMemoryError e) {
-//Log.e("cache", "break at error: oom");
                     releaseDanmakuCache(item, cache);
                     return RESULT_FAILED;
                 } catch (Exception e) {
-//Log.e("cache", "break at exception:" + e.getMessage());
                     releaseDanmakuCache(item, cache);
                     return RESULT_FAILED;
                 }
             }
 
+            /***
+             * 添加弹幕并构建渲染缓存
+             * @param danmaku 弹幕
+             */
             private final void addDanmakuAndBuildCache(BaseDanmaku danmaku) {
                 if (danmaku.isTimeOut() || (danmaku.getActualTime() > mCacheTimer.currMillisecond + mContext.mDanmakuFactory.MAX_DANMAKU_DURATION && !danmaku.isLive)) {
                     return;

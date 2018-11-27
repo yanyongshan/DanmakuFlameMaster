@@ -364,6 +364,10 @@ public abstract class BaseDanmaku {
         return time;
     }
 
+    /***
+     * 获取弹幕实际时间
+     * @return 弹幕实际时间
+     */
     public long getActualTime() {
         if (flags == null || flags.SYNC_TIME_OFFSET_RESET_FLAG != this.syncTimeOffsetResetFlag) {
             this.timeOffset = 0;

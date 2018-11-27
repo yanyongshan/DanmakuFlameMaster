@@ -37,7 +37,7 @@ public class DrawTask implements IDrawTask {
     protected final DanmakuContext mContext;
     
     protected final AbsDisplayer mDisp;
-
+    //弹幕集合
     protected IDanmakus danmakuList;
 
     protected BaseDanmakuParser mParser;
@@ -47,7 +47,7 @@ public class DrawTask implements IDrawTask {
     final IRenderer mRenderer;
 
     DanmakuTimer mTimer;
-
+    //正在渲染的弹幕
     private IDanmakus danmakus = new Danmakus(Danmakus.ST_BY_LIST);
 
     protected boolean clearRetainerFlag;
@@ -65,9 +65,9 @@ public class DrawTask implements IDrawTask {
     protected int mPlayState;
 
     private boolean mIsHidden;
-
+    //最后一条弹幕
     private BaseDanmaku mLastDanmaku;
-
+    //直播弹幕集合
     private Danmakus mLiveDanmakus = new Danmakus(Danmakus.ST_BY_LIST);
 
     private IDanmakus mRunningDanmakus;
@@ -125,6 +125,7 @@ public class DrawTask implements IDrawTask {
         }
         item.index = danmakuList.size();
         boolean subAdded = true;
+        //如果添加的新弹幕时间正好在渲染区间中
         if (mLastBeginMills <= item.getActualTime() && item.getActualTime() <= mLastEndMills) {
             synchronized (danmakus) {
                 subAdded = danmakus.addItem(item);
@@ -197,6 +198,10 @@ public class DrawTask implements IDrawTask {
         }
     }
 
+    /***
+     * 删除过期弹幕
+     * @param msec 检查过期弹幕超时时间(防止检查函数超时)
+     */
     protected synchronized void removeUnusedLiveDanmakusIn(final int msec) {
         if (danmakuList == null || danmakuList.isEmpty() || mLiveDanmakus.isEmpty())
             return;

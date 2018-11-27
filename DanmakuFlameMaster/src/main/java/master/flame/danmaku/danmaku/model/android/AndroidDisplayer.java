@@ -364,7 +364,7 @@ public class AndroidDisplayer extends AbsDisplayer<Canvas, Typeface> {
     private int densityDpi = 160;
 
     private float scaledDensity = 1;
-
+    //可以溢出的尺寸
     private int mSlopPixel = 0;
 
     private boolean mIsHardwareAccelerated = true;
